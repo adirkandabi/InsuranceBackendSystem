@@ -1,0 +1,22 @@
+# --- User data and IDE config ---
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# --- Build outputs ---
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+
+# --- Docker ---
+.dockerignore
+
+# --- Operating System Files ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini

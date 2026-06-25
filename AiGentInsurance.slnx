@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../../../../../../assignments/InsuranceBackendSystem/AiGent.API/AiGent.API.csproj" />
+  <Project Path="../../../../../../assignments/InsuranceBackendSystem/AiGent.Core/AiGent.Core.csproj" />
+  <Project Path="../../../../../../assignments/InsuranceBackendSystem/AiGent.Infrastructure/AiGent.Infrastructure.csproj" />
+</Solution>
