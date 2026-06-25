@@ -1,4 +1,4 @@
-# AiGent - Insurance Policy Management System
+# Insurance Policy Management System
 
 An enterprise-grade Insurance Backend System built with **.NET** following **Clean Architecture** principles. The system manages customers and their insurance policies, enforces domain validation rules, and exposes business intelligence metrics for insurance agents.
 
