@@ -3,6 +3,7 @@ using AiGent.Core.Interfaces;
 using AiGent.Core.Enums;
 using AiGent.API.DTOs;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace AiGent.API.Controllers;
@@ -29,7 +30,10 @@ public class PoliciesController : ControllerBase
             var policy = await _policyService.IssuePolicyAsync(
                 dto.CustomerId, dto.Type, dto.Premium, dto.CoverageAmount, dto.StartDate, dto.EndDate);
 
-            return CreatedAtAction(nameof(GetById), new { id = policy.Id }, policy);
+            // Map to response DTO to avoid object cycles during creation response if relations are populated
+            var response = MapToResponseDto(policy);
+
+            return CreatedAtAction(nameof(GetById), new { id = policy.Id }, response);
         }
         catch (ArgumentException ex)
         {
@@ -54,7 +58,9 @@ public class PoliciesController : ControllerBase
         {
             return NotFound(new { message = "Policy not found." });
         }
-        return Ok(policy);
+
+        var response = MapToResponseDto(policy);
+        return Ok(response);
     }
 
     /// <summary>
@@ -64,7 +70,10 @@ public class PoliciesController : ControllerBase
     public async Task<IActionResult> GetAll([FromQuery] PolicyType? type, [FromQuery] PolicyStatus? status)
     {
         var policies = await _policyService.GetAllPoliciesAsync(type, status);
-        return Ok(policies);
+
+        // Transform the full database entities collection into safe flat DTOs
+        var response = policies.Select(MapToResponseDto);
+        return Ok(response);
     }
 
     /// <summary>
@@ -74,7 +83,22 @@ public class PoliciesController : ControllerBase
     public async Task<IActionResult> GetByCustomer(Guid customerId)
     {
         var policies = await _policyService.GetCustomerPoliciesAsync(customerId);
-        return Ok(policies);
+
+        var response = policies.Select(p => new PolicyResponseDto
+        {
+            Id = p.Id,
+            PolicyNumber = p.PolicyNumber,
+            Type = p.Type,
+            Status = p.Status,
+            Premium = p.Premium,
+            CoverageAmount = p.CoverageAmount,
+            StartDate = p.StartDate,
+            EndDate = p.EndDate,
+            CancelledAt = p.CancelledAt,
+            Customer = null // Setting to null since the caller filtering by customer already has the identity
+        });
+
+        return Ok(response);
     }
 
     /// <summary>
@@ -90,12 +114,39 @@ public class PoliciesController : ControllerBase
             {
                 return NotFound(new { message = "Policy not found." });
             }
-            return Ok(cancelledPolicy);
+
+            var response = MapToResponseDto(cancelledPolicy);
+            return Ok(response);
         }
         catch (InvalidOperationException ex)
         {
             // Policy is already cancelled
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    // DRY Helper method to centralize mapping and clean up controller clutter
+    private static PolicyResponseDto MapToResponseDto(AiGent.Core.Entities.Policy policy)
+    {
+        return new PolicyResponseDto
+        {
+            Id = policy.Id,
+            PolicyNumber = policy.PolicyNumber,
+            Type = policy.Type,
+            Status = policy.Status,
+            Premium = policy.Premium,
+            CoverageAmount = policy.CoverageAmount,
+            StartDate = policy.StartDate,
+            EndDate = policy.EndDate,
+            CancelledAt = policy.CancelledAt,
+            Customer = policy.Customer == null ? null : new CustomerMinDto
+            {
+                Id = policy.Customer.Id,
+                FirstName = policy.Customer.FirstName,
+                LastName = policy.Customer.LastName,
+                Email = policy.Customer.Email,
+                PhoneNumber = policy.Customer.PhoneNumber
+            }
+        };
     }
 }

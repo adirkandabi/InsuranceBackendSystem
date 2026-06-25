@@ -1,6 +1,7 @@
 using AiGent.Core.Interfaces;
 using AiGent.Core.Services;
-using AiGent.Infrastructure;
+using AiGent.Infrastructure.Data;
+using AiGent.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddScoped<IPolicyService, PolicyService>();
 builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 
 // Configure EF Core with SQL Server
 builder.Services.AddDbContext<InsuranceDbContext>(options =>
@@ -21,10 +24,14 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi(); 
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "AiGent Insurance API v1");
+        options.RoutePrefix = "swagger"; 
+    });
 }
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

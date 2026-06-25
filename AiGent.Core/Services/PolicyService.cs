@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AiGent.Core.Entities;
 using AiGent.Core.Enums;
 using AiGent.Core.Interfaces;
+using AiGent.Core.Models;
 
 namespace AiGent.Core.Services;
 
@@ -95,7 +96,31 @@ public class PolicyService : IPolicyService
         await _policyRepository.UpdateAsync(policy);
         return policy;
     }
+    public async Task<DashboardStats> GetDashboardStatsAsync()
+    {
+        // Fetch all active policies with no tracking for maximum performance
+        var allPolicies = await _policyRepository.GetAllAsync(null, null);
+        var activePolicies = allPolicies.Where(p => p.Status == PolicyStatus.Active).ToList();
 
+        // Group policies by their type and count them
+        var policiesByType = activePolicies
+            .GroupBy(p => p.Type.ToString())
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Calculate Total ARR (Sum of premiums of all active policies)
+        decimal totalARR = activePolicies.Sum(p => p.Premium);
+
+        // Count unique customers who have at least one active policy
+        int totalActiveCustomers = activePolicies.Select(p => p.CustomerId).Distinct().Count();
+
+        return new DashboardStats
+        {
+            TotalCustomers = totalActiveCustomers,
+            TotalActivePolicies = activePolicies.Count,
+            TotalARR = totalARR,
+            PoliciesByType = policiesByType
+        };
+    }
     // Helper method to generate the smart readable business identifier
     private static string GenerateSmartPolicyNumber(PolicyType type)
     {

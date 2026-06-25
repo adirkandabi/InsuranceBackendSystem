@@ -26,7 +26,7 @@ public class CustomerService : ICustomerService
             throw new InvalidOperationException("A customer with this email or phone number already exists.");
         }
 
-        // 2. Create the domain entity
+        // Create the domain entity
         var customer = new Customer
         {
             Id = Guid.NewGuid(),
@@ -37,7 +37,7 @@ public class CustomerService : ICustomerService
             CreatedAt = DateTime.UtcNow
         };
 
-        // 3. Save to database via repository
+        // Save to database via repository
         await _customerRepository.AddAsync(customer);
         return customer;
     }
@@ -66,5 +66,33 @@ public class CustomerService : ICustomerService
         // 3. Perform hard delete safely since no active policies restrict it
         await _customerRepository.DeleteAsync(customer);
         return true;
+    }
+    public async Task<Customer?> UpdateCustomerAsync(Guid id, string firstName, string lastName, string email, string phoneNumber)
+    {
+        // Check if the customer actually exists
+        var customer = await _customerRepository.GetByIdAsync(id);
+        if (customer == null) return null;
+
+        // If email or phone changes, verify they aren't stolen by ANOTHER customer
+        if (customer.Email != email || customer.PhoneNumber != phoneNumber)
+        {
+            var existingWithSameDetails = await _customerRepository.GetByEmailOrPhoneAsync(email, phoneNumber);
+
+            // If someone else has this email/phone (meaning their ID is different) -> Block it!
+            if (existingWithSameDetails != null && existingWithSameDetails.Id != id)
+            {
+                throw new InvalidOperationException("Another customer with this email or phone number already exists.");
+            }
+        }
+
+        // Update fields
+        customer.FirstName = firstName;
+        customer.LastName = lastName;
+        customer.Email = email;
+        customer.PhoneNumber = phoneNumber;
+
+        // Save to DB
+        await _customerRepository.UpdateAsync(customer);
+        return customer;
     }
 }
