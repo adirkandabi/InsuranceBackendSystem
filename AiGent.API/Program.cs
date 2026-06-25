@@ -1,5 +1,7 @@
+using AiGent.Core.Interfaces;
+using AiGent.Core.Services;
+using AiGent.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using AiGent.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<IPolicyService, PolicyService>();
+builder.Services.AddScoped<IPolicyRepository, PolicyRepository>();
 
 // Configure EF Core with SQL Server
 builder.Services.AddDbContext<InsuranceDbContext>(options =>
